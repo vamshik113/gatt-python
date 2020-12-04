@@ -9,6 +9,7 @@ except ImportError:
     sys.exit(1)
 
 import re
+import logging
 
 from gi.repository import GObject
 
@@ -299,7 +300,7 @@ class Device:
                 self.connect_failed(errors.Failed("Device does not exist, check adapter name and MAC address."))
             elif ((e.get_dbus_name() == 'org.bluez.Error.Failed') and
                   (e.get_dbus_message() == "Operation already in progress")):
-                pass
+                logging.warning("Connection operation already in progress")
             elif ((self._connect_retry_attempt < 5) and
                   (e.get_dbus_name() == 'org.bluez.Error.Failed') and
                   (e.get_dbus_message() == "Software caused connection abort")):
@@ -310,6 +311,9 @@ class Device:
                 self.connect_failed(_error_from_dbus_error(e))
             else:
                 self.connect_failed(_error_from_dbus_error(e))
+        except Exception as err:
+            logging.warning(err)
+            self.connect_failed(err)
 
     def _connect_signals(self):
         if self._properties_signal is None:
